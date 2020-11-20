@@ -85,7 +85,6 @@ public class Sender {
 
     private  KeyExchange  keyExchange(KeyExchange request)
     {
-        // send to scheduler a jar file and client name and get back a job id .
 
         Connection app = new Connection(url);
 
@@ -177,18 +176,11 @@ public class Sender {
     {
         String decryptedMsg = decrypt(kaPrivKSenderMap,message);
 
-       // System.out.println(decryptedMsg);
-
-//        String payload = verify(signPubKReceiver.getPublicKey(),decryptedMsg).get();
-
         String payload = verify(signreceiverKeys,decryptedMsg).get();
 
 
         System.out.println(payload);
 
-        //CCVIdResponse response = (CCVIdResponse) JSONUtil.fromJSON(payload, CCVIdResponse.class);
-
-        //return response;
 
         return payload;
 

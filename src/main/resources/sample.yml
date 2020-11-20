@@ -1,0 +1,21 @@
+template: Hello, %s!
+defaultName: Stranger
+
+server:
+  #  softNofileLimit: 1000
+  #  hardNofileLimit: 1000
+  applicationConnectors:
+    - type: https
+      port: 8180
+      keyStorePath: /home/manoj/IdeaProjects/P2PE/src/main/resources/mytestkey.jks
+      keyStorePassword: password
+    #this requires the alpn-boot library on the JVM's boot classpath
+    #- type: h2
+    #  port: 8445
+    #  keyStorePath: example.keystore
+    #  keyStorePassword: example
+  adminConnectors:
+    - type: https
+      port: 8181
+      keyStorePath: /home/manoj/IdeaProjects/P2PE/src/main/resources/mytestkey.jks
+      keyStorePassword: password
