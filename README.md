@@ -24,3 +24,4 @@ The pattern does not cater to the following areas, which would need to be provid
 2. Service discovery 
 3. Long term key storage 
 4. Does not use certificates for validating public keys
+5. Use of a Nonce will provide additional security against replay attacks
