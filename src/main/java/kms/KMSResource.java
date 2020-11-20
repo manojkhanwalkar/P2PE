@@ -2,18 +2,23 @@ package kms;
 
 
 import com.codahale.metrics.annotation.Timed;
+import com.nimbusds.jose.jwk.JWK;
+import com.nimbusds.jose.jwk.JWKSet;
 import common.Processor;
-import data.EncryptedSignedRequest;
-import data.EncryptedSignedResponse;
-import data.KeyExchange;
+import data.*;
 import util.ClientCache;
 import util.ClientManager;
+import util.JWUtil;
 import util.KeyExchangeUtil;
 
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 
 @Path("/")
@@ -34,36 +39,27 @@ public class KMSResource {
 
 
 
-ClientCache clientCache = new ClientCache();
-
-
     @POST
     @Timed
-    @Path("/keyexchange")
+    @Path("/issuekey")
     @Produces(MediaType.APPLICATION_JSON)
-    public KeyExchange keyexchange(KeyExchange request) {
+    public KeyResponse issueKey(KeyRequest request) {
+        var keys =  JWUtil.createKeys();
+        var keysAsString = JWKToJSON(new ArrayList<>(keys.values()));
 
+        KeyResponse response = new KeyResponse();
+        response.setJavawebKeySet(keysAsString);
 
-        return KeyExchangeUtil.keyExchange(request,clientCache);
+        return response;
 
     }
 
+    private String JWKToJSON(List<JWK> list)
+    {
 
-    Processor<String,String> processor = new KMSRequestProcessor();
-
-    @POST
-    @Timed
-    @Path("/verify")
-    @Produces(MediaType.APPLICATION_JSON)
-    public EncryptedSignedResponse verify(EncryptedSignedRequest encryptedSignedRequest) {
-
-
-        return ClientManager.process(encryptedSignedRequest,clientCache,processor);
-
-
+        JWKSet set = new JWKSet(list);
+        return set.toJSONObject().toJSONString();
     }
-
-
 
 
 

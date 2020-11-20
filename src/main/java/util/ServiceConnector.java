@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import static util.JWUtil.*;
 
 
-public class Sender {
+public class ServiceConnector {
 
 
 
@@ -43,23 +43,23 @@ public class Sender {
 
 
 
-    private void createKeys()
+ /*   private void createKeys()
     {
         JWUtil.createKeys(signPubKSenderMap,signPrivKSenderMap,"signSender");
 
         JWUtil.createKeys(kaPubKSenderMap,kaPrivKSenderMap,"kaSender");
 
 
-    }
+    }*/
 
 
    String url;
 
-    public Sender(String url)
+    public ServiceConnector(String url)
     {
         this.url = url;
 
-        createKeys();
+       // createKeys();
 
     }
 

@@ -60,20 +60,20 @@ public class ClientHandler {
 
     }
 
-    private void createKeys()
+  /*  private void createKeys()
     {
             JWUtil.createKeys(signPubKReceiverMap,signPrivKReceiverMap,"signReceiver");
 
             JWUtil.createKeys(kaPubKReceiverMap,kaPrivKReceiverMap,"kaReceiver");
 
 
-    }
+    }*/
 
 
 
     public ClientHandler()
     {
-        createKeys();
+        //createKeys();
     }
 
     public String unwrap(String message) throws Exception

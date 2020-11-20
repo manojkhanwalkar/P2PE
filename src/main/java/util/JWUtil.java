@@ -16,10 +16,7 @@ import java.security.PrivateKey;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.text.ParseException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 import data.Header;
 
@@ -28,25 +25,28 @@ public class JWUtil {
    // public enum SignType { Complete , Compressed }
 
 
-    public static void createKeys(Map<String,JWK> publicJsonWebKeyMap , Map<String,JWK> privateJsonWebKeyMap,String prepend)
+    public static Map<String,JWK> createKeys()
     {
-        for (int i=0;i<10;i++) {
+        Map<String,JWK> keys = new HashMap<>();
+
             try {
                 KeyPairGenerator gen = KeyPairGenerator.getInstance("EC");
                 gen.initialize(256);
                 KeyPair keyPair = gen.generateKeyPair();
 
-                String name = prepend + "_" + UUID.randomUUID().toString();
+                String name = UUID.randomUUID().toString();
+                keys.put(name,createECJWK(keyPair, name, true));
+                name = UUID.randomUUID().toString();
+                keys.put(name,createECJWK(keyPair, name, true));
 
-                publicJsonWebKeyMap.put(name, createECJWK(keyPair, name, false));
-                privateJsonWebKeyMap.put(name, createECJWK(keyPair, name, true));
 
 
             } catch (Exception e) {
                 e.printStackTrace();
             }
 
-        }
+            return keys;
+
 
     }
 
@@ -67,10 +67,7 @@ public class JWUtil {
 
             return jweObject.serialize();
 
-//TODO - U / V info to be set from headers
 
-
-            //           headers.stream().forEach(header-> jwe.setHeader(header.getName(),header.getValue()));
         } catch (JOSEException e) {
             e.printStackTrace();
 
