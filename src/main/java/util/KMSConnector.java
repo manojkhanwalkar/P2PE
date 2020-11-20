@@ -20,22 +20,6 @@ public class KMSConnector {
 
 
 
-    public JWKSet getKAandSignPubKeys()
-    {
-
-        String jsonWebKeySet = keyExchange(new KeyRequest()).getJavawebKeySet();
-        try {
-            JWKSet set = JWKSet.parse(jsonWebKeySet);
-            return set;
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-        return null;
-
-    }
-
-
-
 
 
    String url;
@@ -50,7 +34,7 @@ public class KMSConnector {
 
 
 
-    private  KeyResponse  keyExchange(KeyRequest request)
+    public  KeyResponse  getKAandSignPubKeys(KeyRequest request)
     {
 
         Connection app = new Connection(url);

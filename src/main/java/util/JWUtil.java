@@ -25,9 +25,8 @@ public class JWUtil {
    // public enum SignType { Complete , Compressed }
 
 
-    public static Map<String,JWK> createKeys()
+    public static JWK createKey()
     {
-        Map<String,JWK> keys = new HashMap<>();
 
             try {
                 KeyPairGenerator gen = KeyPairGenerator.getInstance("EC");
@@ -35,9 +34,7 @@ public class JWUtil {
                 KeyPair keyPair = gen.generateKeyPair();
 
                 String name = UUID.randomUUID().toString();
-                keys.put(name,createECJWK(keyPair, name, true));
-                name = UUID.randomUUID().toString();
-                keys.put(name,createECJWK(keyPair, name, true));
+                return createECJWK(keyPair, name, true);
 
 
 
@@ -45,7 +42,7 @@ public class JWUtil {
                 e.printStackTrace();
             }
 
-            return keys;
+            return null;
 
 
     }
@@ -106,13 +103,6 @@ public class JWUtil {
         return null;
 
     }
-
-
-/*
-  private String sign(String msg) throws Exception {
-      System.out.println("JWS payload message: " + msg);
-    }
- */
 
 
 

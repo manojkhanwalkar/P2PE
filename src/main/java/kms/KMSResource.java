@@ -44,11 +44,12 @@ public class KMSResource {
     @Path("/issuekey")
     @Produces(MediaType.APPLICATION_JSON)
     public KeyResponse issueKey(KeyRequest request) {
-        var keys =  JWUtil.createKeys();
-        var keysAsString = JWKToJSON(new ArrayList<>(keys.values()));
+      //  var keys =
+       // var keysAsString = JWKToJSON(new ArrayList<>(keys.values()));
 
         KeyResponse response = new KeyResponse();
-        response.setJavawebKeySet(keysAsString);
+        response.setKaKey(JWUtil.createKey().toJSONString());
+        response.setSigningKey(JWUtil.createKey().toJSONString());
 
         return response;
 

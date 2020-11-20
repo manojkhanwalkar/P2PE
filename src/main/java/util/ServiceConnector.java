@@ -18,12 +18,14 @@ public class ServiceConnector {
 
 
 
-    Map<String, JWK> kaPubKSenderMap = new HashMap<>();
-    Map<String,JWK> kaPrivKSenderMap = new HashMap<>();
-    Map<String,JWK> signPubKSenderMap = new HashMap<>();
-    Map<String,JWK> signPrivKSenderMap = new HashMap<>();
+    JWK kaPubKSender;
+    JWK kaPrivKSender;
+    JWK signPubKSender ;
+    JWK signPrivKSender;
 
 
+    JWK signreceiverKey;
+    JWK kareceiverKey;
 
 
 
@@ -31,8 +33,9 @@ public class ServiceConnector {
     {
 
         List<JWK> list = new ArrayList<>();
-        list.addAll(kaPubKSenderMap.values()) ;
-        list.addAll(signPubKSenderMap.values() ) ;
+
+       // list.addAll(kaPubKSenderMap.values()) ;
+        //list.addAll(signPubKSenderMap.values() ) ;
         JWKSet set = new JWKSet(list);
         return set.toJSONObject().toJSONString();
 
@@ -43,28 +46,20 @@ public class ServiceConnector {
 
 
 
- /*   private void createKeys()
-    {
-        JWUtil.createKeys(signPubKSenderMap,signPrivKSenderMap,"signSender");
-
-        JWUtil.createKeys(kaPubKSenderMap,kaPrivKSenderMap,"kaSender");
-
-
-    }*/
-
 
    String url;
 
-    public ServiceConnector(String url)
+    public ServiceConnector(String url, JWK kaKey , JWK signKey)
     {
         this.url = url;
+        kaPubKSender = kaKey.toPublicJWK();
+        kaPrivKSender = kaKey;
+        signPubKSender = signKey.toPublicJWK();
+        signPrivKSender = signKey;
 
-       // createKeys();
 
     }
 
-    Map<String,JWK> signreceiverKeys = new HashMap<>();
-    Map<String,JWK> kareceiverKeys = new HashMap<>();
 
     public void init() throws Exception
     {
@@ -75,10 +70,10 @@ public class ServiceConnector {
         String jsonWebKeySet = keyExchange(request).getJavawebKeySet();
         JWKSet set = JWKSet.parse(jsonWebKeySet);
 
-        set.getKeys().stream().filter(key->key.getKeyID().startsWith("sign")).forEach(key->{ signreceiverKeys.put(key.getKeyID(),key);});
+   /*     set.getKeys().stream().filter(key->key.getKeyID().startsWith("sign")).forEach(key->{ signreceiverKeys.put(key.getKeyID(),key);});
         set.getKeys().stream().filter(key->key.getKeyID().startsWith("ka")).forEach(key->{ kareceiverKeys.put(key.getKeyID(),key);});
 
-
+*/
 
     }
 
@@ -107,7 +102,7 @@ public class ServiceConnector {
 
     }
 
-
+/*
     private String send(EncryptedSignedRequest request, String action)
     {
         // send to scheduler a jar file and client name and get back a job id .
@@ -134,12 +129,12 @@ public class ServiceConnector {
     }
 
 
-
+*/
 
 
     ThreadLocalRandom random = ThreadLocalRandom.current();
 
-
+/*
 
     public String send(String payload, String action)
     {
@@ -186,7 +181,7 @@ public class ServiceConnector {
 
     }
 
-
+*/
 
 
 
