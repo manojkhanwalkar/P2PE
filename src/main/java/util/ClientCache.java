@@ -1,5 +1,6 @@
 package util;
 
+import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 
 import java.util.Optional;
@@ -10,10 +11,10 @@ public class ClientCache {
 
     ConcurrentMap<String,ClientHandler>  idHandlerMap = new ConcurrentHashMap<>();
 
-    public void put(String keyId , ClientHandler clientHandler)
+   /* public void put(String keyId , ClientHandler clientHandler)
     {
         idHandlerMap.put(keyId , clientHandler);
-    }
+    }*/
 
 
     public Optional<ClientHandler> get(String keyId)
@@ -32,8 +33,15 @@ public class ClientCache {
         }
     }
 
-    public void put(JWKSet keySet, ClientHandler clientHandler) {
+    public void put(JWK key, ClientHandler clientHandler) {
 
-        keySet.getKeys().forEach(key->idHandlerMap.put(key.getKeyID(),clientHandler));
+        idHandlerMap.put(key.getKeyID(),clientHandler);
+    }
+
+    @Override
+    public String toString() {
+        return "ClientCache{" +
+                "idHandlerMap=" + idHandlerMap +
+                '}';
     }
 }

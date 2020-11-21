@@ -2,13 +2,22 @@ package data;
 
 public class KeyExchange {
 
-    String javawebKeySet;
+    String kaPublicKey;
+    String signPublicKey;
 
-    public String getJavawebKeySet() {
-        return javawebKeySet;
+    public String getKaPublicKey() {
+        return kaPublicKey;
     }
 
-    public void setJavawebKeySet(String javawebKeySet) {
-        this.javawebKeySet = javawebKeySet;
+    public void setKaPublicKey(String kaPublicKey) {
+        this.kaPublicKey = kaPublicKey;
+    }
+
+    public String getSignPublicKey() {
+        return signPublicKey;
+    }
+
+    public void setSignPublicKey(String signPublicKey) {
+        this.signPublicKey = signPublicKey;
     }
 }

@@ -65,15 +65,13 @@ public class ServiceConnector {
     {
 
         KeyExchange request = new KeyExchange();
-        request.setJavawebKeySet(getKAandSignPubKeys());
+        request.setSignPublicKey(signPubKSender.toJSONString());
+        request.setKaPublicKey(kaPubKSender.toJSONString());
 
-        String jsonWebKeySet = keyExchange(request).getJavawebKeySet();
-        JWKSet set = JWKSet.parse(jsonWebKeySet);
 
-   /*     set.getKeys().stream().filter(key->key.getKeyID().startsWith("sign")).forEach(key->{ signreceiverKeys.put(key.getKeyID(),key);});
-        set.getKeys().stream().filter(key->key.getKeyID().startsWith("ka")).forEach(key->{ kareceiverKeys.put(key.getKeyID(),key);});
-
-*/
+        KeyExchange response = keyExchange(request);
+        kareceiverKey = JWK.parse(response.getKaPublicKey());
+        signreceiverKey = JWK.parse(response.getSignPublicKey());
 
     }
 
@@ -83,7 +81,7 @@ public class ServiceConnector {
 
         Connection app = new Connection(url);
 
-        System.out.println("Sending keys" + request.getJavawebKeySet());
+
 
         Optional<String> result = app.sendSimple(JSONUtil.toJSON(request),"keyexchange");
 
@@ -91,7 +89,6 @@ public class ServiceConnector {
 
             KeyExchange keyExchange = (KeyExchange) JSONUtil.fromJSON(result.get(), KeyExchange.class);
 
-            System.out.println("Received keys " + request.getJavawebKeySet());
 
             return keyExchange;
         }
@@ -102,7 +99,7 @@ public class ServiceConnector {
 
     }
 
-/*
+
     private String send(EncryptedSignedRequest request, String action)
     {
         // send to scheduler a jar file and client name and get back a job id .
@@ -129,34 +126,30 @@ public class ServiceConnector {
     }
 
 
-*/
 
 
-    ThreadLocalRandom random = ThreadLocalRandom.current();
-
-/*
 
     public String send(String payload, String action)
     {
 
         EncryptedSignedRequest esRequest = new EncryptedSignedRequest();
 
-        int max = random.nextInt(kareceiverKeys.size());
 
-        JWK kaPubKReceiver = kareceiverKeys.values().stream().collect(Collectors.toList()).get(max);
 
-        max = random.nextInt(kareceiverKeys.size());
+       // JWK kaPubKReceiver = kareceiverKeys.values().stream().collect(Collectors.toList()).get(max);
 
-        JWK signPrivKSender = signPrivKSenderMap.values().stream().collect(Collectors.toList()).get(max);
 
-        System.out.println("Encrypt key " + kaPubKReceiver.getKeyID() + " " + "Sign Key " + signPrivKSender.getKeyID());
+
+        //JWK signPrivKSender = signPrivKSenderMap.values().stream().collect(Collectors.toList()).get(max);
+
+        System.out.println("Encrypt key " + kareceiverKey.getKeyID() + " " + "Sign Key " + signPrivKSender.getKeyID());
 
         //        jwe.setHeader(HeaderParameterNames.AGREEMENT_PARTY_V_INFO, UUID.randomUUID().toString());
 
         //  Header header = new Header(HeaderParameterNames.AGREEMENT_PARTY_U_INFO, UUID.randomUUID().toString());
         List<Header> headers = List.of();
 
-        String str = encrypt(headers , kaPubKReceiver,sign(signPrivKSender,payload));
+        String str = encrypt(headers , kareceiverKey,sign(signPrivKSender,payload));
 
         esRequest.setEncryptedSignedPayload(str);
 
@@ -169,19 +162,19 @@ public class ServiceConnector {
 
     public String UnwrapResponse(String message)
     {
-        String decryptedMsg = decrypt(kaPrivKSenderMap,message);
+        String decryptedMsg = decrypt(kaPrivKSender,message);
 
-        String payload = verify(signreceiverKeys,decryptedMsg).get();
+        String payload = verify(signreceiverKey,decryptedMsg).get();
 
 
-        System.out.println(payload);
+       // System.out.println(payload);
 
 
         return payload;
 
     }
 
-*/
+
 
 
 

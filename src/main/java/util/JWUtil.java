@@ -75,18 +75,13 @@ public class JWUtil {
     }
 
 
-    public static String decrypt(Map<String,JWK> keyMap,  String payload)
+    public static String decrypt(JWK decrypterKey,  String payload)
     {
 
 
         try {
             var jweObject = JWEObject.parse(payload);
 
-            String keyId = jweObject.getHeader().getKeyID();
-
-            JWK decrypterKey = keyMap.get(keyId);
-
-            //TODO - set and process expiry time
 
 
             jweObject
@@ -139,15 +134,11 @@ public class JWUtil {
 
 
 
-    public static Optional<String> verify(Map<String, JWK> keys , String compactSerialization)
+    public static Optional<String> verify(JWK publicKey , String compactSerialization)
     {
 
         try {
             var jwsObject = JWSObject.parse(compactSerialization);
-
-            String keyId = jwsObject.getHeader().getKeyID();
-
-            JWK publicKey  = keys.get(keyId);
 
             var verifier = new ECDSAVerifier(publicKey.toECKey());
 

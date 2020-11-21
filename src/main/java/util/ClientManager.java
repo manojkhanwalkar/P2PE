@@ -19,6 +19,10 @@ public class ClientManager {
 
             String keyId = jweObject.getHeader().getKeyID();
 
+            System.out.println(keyId);
+
+            System.out.println(clientCache);
+
             ClientHandler clientHandler = clientCache.get(keyId).orElseThrow();
 
             String payloadUnwrapped = clientHandler.unwrap(payload);

@@ -4,6 +4,7 @@ package util;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import data.Header;
+import data.KeyRequest;
 
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -20,38 +21,48 @@ public class ClientHandler {
 
 
 
-    Map<String, JWK> kaPubKReceiverMap = new HashMap<>();
-    Map<String,JWK> kaPrivKReceiverMap = new HashMap<>();
-    Map<String,JWK> signPubKReceiverMap = new HashMap<>();
-    Map<String,JWK> signPrivKReceiverMap = new HashMap<>();
+    JWK kaPubKReceiver=null;
+    JWK kaPrivKReceiver=null;
+    JWK signPubKReceiver=null;
+    JWK signPrivKReceiver=null;
+
+    JWK signSenderKey=null;
+    JWK kaSenderKey=null;
 
 
-    public String getKAandSignPubKeys()
+
+
+    public String getKAPubKey()
     {
-        List<JWK> list = new ArrayList<>();
-       list.addAll(kaPubKReceiverMap.values()) ;
-        list.addAll(signPubKReceiverMap.values() ) ;
-       JWKSet set = new JWKSet(list);
-         return set.toJSONObject().toJSONString();
+        return kaPubKReceiver.toJSONString();
+    }
+
+    public String getSignPubKey()
+    {
+        return signPubKReceiver.toJSONString();
     }
 
 
 
 
-    Map<String,JWK> signSenderKeys = new HashMap<>();
-    Map<String,JWK> kaSenderKeys = new HashMap<>();
 
-
-    public void init(String senderJsonWebKeySet)
+    public void init(String kaPublicKey , String signPublicKey)
     {
-
-       // String jsonWebKeySet = sender.getKAandSignPubKeys();
         try {
-            JWKSet set = JWKSet.parse(senderJsonWebKeySet);
 
+            KMSConnector kmsConnector = new KMSConnector("https://localhost:8280/");
+        // get the keys from KMS and populate them in the service connector
 
-            set.getKeys().stream().filter(key->key.getKeyID().startsWith("sign")).forEach(key->{ signSenderKeys.put(key.getKeyID(),key);});
-            set.getKeys().stream().filter(key->key.getKeyID().startsWith("ka")).forEach(key->{ kaSenderKeys.put(key.getKeyID(),key);});
+        var keys = kmsConnector.getKAandSignPubKeys(new KeyRequest());
+
+         kaPrivKReceiver = JWK.parse(keys.getKaKey());
+        kaPubKReceiver =  kaPrivKReceiver.toPublicJWK();
+        signPrivKReceiver = JWK.parse(keys.getSigningKey());
+         signPubKReceiver = signPrivKReceiver.toPublicJWK();
+
+            signSenderKey = JWK.parse(signPublicKey);
+            kaSenderKey = JWK.parse(kaPublicKey);
+
         } catch (ParseException e) {
             e.printStackTrace();
         }
@@ -60,14 +71,6 @@ public class ClientHandler {
 
     }
 
-  /*  private void createKeys()
-    {
-            JWUtil.createKeys(signPubKReceiverMap,signPrivKReceiverMap,"signReceiver");
-
-            JWUtil.createKeys(kaPubKReceiverMap,kaPrivKReceiverMap,"kaReceiver");
-
-
-    }*/
 
 
 
@@ -79,7 +82,7 @@ public class ClientHandler {
     public String unwrap(String message) throws Exception
     {
 
-        String payload = verify(signSenderKeys,decrypt(kaPrivKReceiverMap,message)).orElseThrow();
+        String payload = verify(signSenderKey,decrypt(kaPrivKReceiver,message)).orElseThrow();
 
 
         return payload;
@@ -90,9 +93,9 @@ public class ClientHandler {
 
     public String wrap(String message)
     {
-        JWK kaPubKSender = kaSenderKeys.values().stream().findAny().get();
+        JWK kaPubKSender = kaSenderKey; //.values().stream().findAny().get();
 
-        JWK signPrivKReceiver = signPrivKReceiverMap.values().stream().findAny().get();
+        //JWK signPrivKReceiver =   .values().stream().findAny().get();
 
         List<Header> headers = List.of();
 
@@ -104,24 +107,7 @@ public class ClientHandler {
     }
 
 
-  /*  public void sendMessageToSender(String payload) throws Exception
-    {
 
-
-        //   jwe.setHeader(HeaderParameterNames.AGREEMENT_PARTY_U_INFO, UUID.randomUUID().toString());
-        //        jwe.setHeader(HeaderParameterNames.AGREEMENT_PARTY_V_INFO, UUID.randomUUID().toString());
-
-
-       //Header header = new Header(HeaderParameterNames.AGREEMENT_PARTY_V_INFO, UUID.randomUUID().toString());
-       // var headers = List.of(header);
-
-       List<Header> headers = List.of();
-
-        String str = FPEencrypt(headers , kaPubKSender,sign(signPrivKReceiver,payload));
-
-        sender.recvMessageFromReceover(str);
-
-    }*/
 
 
 

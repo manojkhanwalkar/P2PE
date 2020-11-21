@@ -11,23 +11,21 @@ public class KeyExchangeUtil {
     public static KeyExchange keyExchange(KeyExchange request, ClientCache clientCache) {
 
 
-        try {
             ClientHandler clientHandler = new ClientHandler();
-            clientHandler.init(request.getJavawebKeySet());
+            clientHandler.init(request.getKaPublicKey(), request.getSignPublicKey());
 
 
             KeyExchange response = new KeyExchange();
-            response.setJavawebKeySet(clientHandler.getKAandSignPubKeys());
+            response.setKaPublicKey(clientHandler.getKAPubKey());
+            response.setSignPublicKey(clientHandler.getSignPubKey());
 
-            clientCache.put(JWKSet.parse(request.getJavawebKeySet()),clientHandler);
-            clientCache.put(JWKSet.parse(response.getJavawebKeySet()),clientHandler);
+            clientCache.put(clientHandler.kaSenderKey,clientHandler);
+            clientCache.put(clientHandler.signSenderKey,clientHandler);
+            clientCache.put(clientHandler.kaPubKReceiver,clientHandler);
+            clientCache.put(clientHandler.signPubKReceiver,clientHandler);
 
             return response;
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
 
-        return null;
     }
 
 
