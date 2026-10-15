@@ -1,6 +1,7 @@
 package kms;
 
 
+import common.AppConfiguration;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
@@ -21,7 +22,7 @@ public class KMSApplication extends Application<KMSConfiguration> {
 
     //    IDStatusPollManager.getInstance().start();
 
-        // nothing to do yet
+        AppConfiguration.enableEnvironmentSubstitution(bootstrap);
     }
 
     @Override

@@ -17,7 +17,7 @@ Starts Dropwizard with the given CLI arguments (typically `server <config.yml>`)
 Returns `"KMS"` (shown in logs and the admin page).
 
 ### `void initialize(Bootstrap<KMSConfiguration> bootstrap)`
-Does nothing (only contains a commented-out call).
+Enables `${ENV_VAR}` substitution in the YAML (see [`AppConfiguration.java`](../common/AppConfiguration.java.md)), so the keystore settings come from the environment.
 
 ### `void run(KMSConfiguration configuration, Environment environment)`
 - **What it does:** creates a [`KMSResource.java`](KMSResource.java.md) with the `template`/`defaultName` config values and registers it with Jersey, exposing `POST /issuekey`.

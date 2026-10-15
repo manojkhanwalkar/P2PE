@@ -28,18 +28,27 @@ The pattern does not cater to the following areas, which would need to be provid
 
 **Build & Run**
 
-Requires Java 26 and Maven 3.9+. Run the commands from the project root (the configs use a relative keystore path).
+Requires Java 26 and Maven 3.9+. Run the commands from the project root.
+
+The TLS keystore is not in the repository. The servers read its path and password from the `P2PE_KEYSTORE_PATH` and `P2PE_KEYSTORE_PASSWORD` environment variables and refuse to start without them. For local development, generate a self-signed `localhost` keystore and a certificate-only truststore (both gitignored) once:
+
+```
+export P2PE_KEYSTORE_PASSWORD='<choose one>'
+export P2PE_KEYSTORE_PATH=dev/dev-keystore.p12
+dev/generate-dev-keystore.sh
+```
+
+Then:
 
 ```
 mvn package
+TRUST="-Djavax.net.ssl.trustStore=dev/dev-truststore.p12 -Djavax.net.ssl.trustStorePassword=$P2PE_KEYSTORE_PASSWORD"
 java -cp target/P2PE-1.0-SNAPSHOT.jar kms.KMSApplication server src/main/resources/kms.yml
-java -Djavax.net.ssl.trustStore=src/main/resources/mytestkey.jks -Djavax.net.ssl.trustStorePassword=password \
-     -cp target/P2PE-1.0-SNAPSHOT.jar service.SampleApplication server src/main/resources/sample.yml
-java -Djavax.net.ssl.trustStore=src/main/resources/mytestkey.jks -Djavax.net.ssl.trustStorePassword=password \
-     -cp target/P2PE-1.0-SNAPSHOT.jar client.Client
+java $TRUST -cp target/P2PE-1.0-SNAPSHOT.jar service.SampleApplication server src/main/resources/sample.yml
+java $TRUST -cp target/P2PE-1.0-SNAPSHOT.jar client.Client
 ```
 
-`mytestkey.jks` holds a self-signed development certificate for `localhost` (password `password`); do not use it in production.
+In production, point `P2PE_KEYSTORE_PATH` at a keystore issued by your CA, and give clients a truststore holding that CA. The admin ports (8181, 8281) listen on `127.0.0.1` only.
 
 <!-- BEGIN: generated-docs-summary -->
 ## Code Overview

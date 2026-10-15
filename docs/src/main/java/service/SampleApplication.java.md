@@ -17,7 +17,7 @@ Starts Dropwizard with the given CLI arguments.
 Returns `"Sample Service"`.
 
 ### `void initialize(Bootstrap<SampleConfiguration> bootstrap)`
-Empty.
+Enables `${ENV_VAR}` substitution in the YAML (see [`AppConfiguration.java`](../common/AppConfiguration.java.md)), so the keystore settings come from the environment.
 
 ### `void run(SampleConfiguration configuration, Environment environment)`
 Creates a [`SampleResource.java`](SampleResource.java.md) (with the unused `template`/`defaultName` values) and registers it with Jersey, exposing `POST /keyexchange` and `POST /verify`.

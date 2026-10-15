@@ -11,5 +11,5 @@ Identical in structure to [`kms.yml`](kms.yml.md), except for the ports:
 |---|---|---|
 | `template`, `defaultName` | `Hello, %s!`, `Stranger` | Required; unused. |
 | application connector | `https`, port `8180` | REST API (`/keyexchange`, `/verify`). |
-| admin connector | `https`, port `8181` | Dropwizard admin. |
-| `keyStorePath` / `keyStorePassword` | `src/main/resources/mytestkey.jks` / `password` | Same dev keystore; path relative to the working directory. |
+| admin connector | `https`, `bindHost: 127.0.0.1`, port `8181` | Dropwizard admin, local-only. |
+| `keyStorePath` / `keyStorePassword` / `keyStoreType` | `${P2PE_KEYSTORE_PATH}` / `${P2PE_KEYSTORE_PASSWORD}` / `PKCS12` | Same keystore settings as the KMS, from the environment. |

@@ -14,4 +14,5 @@
   4. Passes the plaintext to `processor.process`.
   5. `clientHandler.wrap` signs and encrypts the result, echoing the request nonce, and returns it in an `EncryptedSignedResponse`.
 - **Errors:** `BadRequestException` (HTTP 400) when the JWE is malformed, the `kid` is unknown, or decryption, verification or the nonce check fails. Exceptions from `processor` are not caught (HTTP 500).
+- **Logging:** unknown-session and decrypt, verify or replay rejections are logged at WARN (Dropwizard doesn't log 4xx itself). An unknown `kid` is not logged, because it is attacker-controlled and could forge log lines.
 - **Notes:** a `null` payload field would cause a `NullPointerException` while parsing (HTTP 500), not a 400.

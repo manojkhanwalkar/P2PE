@@ -10,10 +10,10 @@
 - **Dependencies:**
   - `dropwizard-core` — REST servers.
   - `nimbus-jose-jwt` — JOSE crypto.
-  - Jackson `jsr310` and `cbor`.
-  - Guava, commons-io, commons-codec, BouncyCastle `bcprov`/`bcpkix` (`jdk18on`), Tink.
-  - `junit-jupiter` (test scope).
-  - Of these, the code only uses Dropwizard, Nimbus and Jackson directly. Tink is needed at test time for Nimbus' Ed25519 support.
+  - Jackson `jsr310`.
+  - Guava (the session cache in `ClientCache`).
+  - Test scope: `junit-jupiter`; Tink (Nimbus' Ed25519 support); BouncyCastle `bcprov`/`bcpkix` (`jdk18on`, PEM parsing in `NimbusFeaturesTest`).
+  - Unused commons-io, commons-codec and Jackson CBOR were removed, and Tink and BouncyCastle moved to test scope, so they're no longer shipped in the uber jar (OWASP A03).
 - **Plugins:**
   - compiler 3.16.0, surefire and failsafe 3.6.0.
   - shade 3.6.2, bound to `package`. It produces `target/P2PE-1.0-SNAPSHOT.jar` with every dependency inside.

@@ -21,9 +21,12 @@ All fields are `null` until `init` succeeds.
 Return the server's public ECDH / signing JWK as JSON, to send back to the client. NPE if called before `init`.
 
 ### `void init(String kaPublicKey, String signPublicKey) throws ParseException`
-- **What it does:** makes a **blocking HTTPS call to the KMS** (`KMSConnector.DEFAULT_URL`) to get two new server key pairs, derives their public halves, and parses the client's two public JWKs.
+- **What it does:** validates the client's two public JWKs with `parsePeerKey`, then makes a **blocking HTTPS call to the KMS** (`KMSConnector.DEFAULT_URL`) to get two new server key pairs and derives their public halves. Validating first means a bad request costs no KMS call.
 - **Parameters:** the client's public ECDH and signing keys as JWK JSON.
-- **Errors:** `ParseException` if any JWK JSON is invalid; `RuntimeException` from `Connection.send` if the KMS call fails.
+- **Errors:** `ParseException` if a client key is missing, invalid, not EC P-256, or contains a private part; `RuntimeException` from `Connection.send` if the KMS call fails.
+
+### `static ECKey parsePeerKey(String json) throws ParseException`
+Parses a peer's key and accepts only a public EC P-256 JWK, which is what ES256 and ECDH-ES here require. Rejecting other key types up front stops them from failing later with a `ClassCastException` (HTTP 500), possibly after the request has already been processed.
 
 ### `VerifiedMessage unwrap(String message)`
 Decrypts an incoming JWE with the server's ECDH private key, verifies the inner JWS with the client's signing key (`JWUtil.decryptAndVerify`), then records its nonce in the session's `NonceCache`. Throws `SecurityException` if decryption or verification fails, or if the nonce is missing, repeated or outside the time window.

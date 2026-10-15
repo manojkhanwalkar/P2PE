@@ -10,7 +10,7 @@
 
 ## Functions
 ### `String process(String payloadUnwrapped)`
-- **What it does:** prints the decrypted, verified payload to stdout and returns it unchanged.
+- **What it does:** returns the decrypted, verified payload unchanged. It deliberately doesn't log it: in a P2PE deployment the payload is the sensitive data.
 - **Returns:** the same string, which is then signed and encrypted back to the client.
 
 ## Notes

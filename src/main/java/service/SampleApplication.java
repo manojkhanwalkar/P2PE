@@ -1,6 +1,7 @@
 package service;
 
 
+import common.AppConfiguration;
 import io.dropwizard.core.Application;
 import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
@@ -19,7 +20,7 @@ public class SampleApplication extends Application<SampleConfiguration> {
     @Override
     public void initialize(Bootstrap<SampleConfiguration> bootstrap) {
 
-
+        AppConfiguration.enableEnvironmentSubstitution(bootstrap);
     }
 
     @Override

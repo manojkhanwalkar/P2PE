@@ -57,8 +57,9 @@ sequenceDiagram
 | `src/main/java/common` | Shared Dropwizard config base and the `Processor` interface. |
 | `src/main/java/data` | JSON request/response beans. |
 | `src/main/java/util` | Crypto (`JWUtil`), HTTP/JSON helpers, client and server session logic. |
-| `src/main/resources` | Dropwizard YAML configs and the dev TLS keystore `mytestkey.jks`. |
-| `src/test/java` | Unit tests for `JWUtil`, `NonceCache` and `ClientHandler` plus exploratory Nimbus examples. |
+| `src/main/resources` | Dropwizard YAML configs (keystore path and password come from environment variables). |
+| `dev` | `generate-dev-keystore.sh`, which creates the gitignored local dev keystore and truststore. |
+| `src/test/java` | Unit tests for `JWUtil`, `NonceCache`, `ClientHandler` and `ClientCache` plus exploratory Nimbus examples. |
 
 ## File index
 
@@ -101,14 +102,17 @@ sequenceDiagram
 
 ## Build, run, test
 
-You need Java 26 and Maven 3.9+. Run everything **from the repository root**, because the YAML configs reference the keystore by a relative path.
+You need Java 26 and Maven 3.9+. Run everything **from the repository root**. The servers need `P2PE_KEYSTORE_PATH` and `P2PE_KEYSTORE_PASSWORD` set and refuse to start otherwise.
 
 ```bash
 mvn package          # compiles, runs tests, builds target/P2PE-1.0-SNAPSHOT.jar (uber jar)
 mvn test             # tests only
 
+export P2PE_KEYSTORE_PASSWORD='<choose one>' P2PE_KEYSTORE_PATH=dev/dev-keystore.p12
+dev/generate-dev-keystore.sh   # once: creates dev/dev-keystore.p12 and dev/dev-truststore.p12
+
 JAR=target/P2PE-1.0-SNAPSHOT.jar
-TRUST="-Djavax.net.ssl.trustStore=src/main/resources/mytestkey.jks -Djavax.net.ssl.trustStorePassword=password"
+TRUST="-Djavax.net.ssl.trustStore=dev/dev-truststore.p12 -Djavax.net.ssl.trustStorePassword=$P2PE_KEYSTORE_PASSWORD"
 
 java -cp $JAR kms.KMSApplication server src/main/resources/kms.yml               # KMS on https://localhost:8280
 java $TRUST -cp $JAR service.SampleApplication server src/main/resources/sample.yml  # service on https://localhost:8180
@@ -118,22 +122,21 @@ java $TRUST -cp $JAR client.Client                                              
 - **Ports:**
   - KMS: 8280 (API) and 8281 (admin).
   - Service: 8180 (API) and 8181 (admin).
-  - All HTTPS.
-- **TLS:** `src/main/resources/mytestkey.jks` is a self-signed development certificate for `localhost` (PKCS12, password `password`). The service and the client need the trust-store flags because both make HTTPS calls; the KMS only serves. Hostname verification is on.
+  - All HTTPS. The admin ports listen on `127.0.0.1` only, because the admin endpoints have no authentication.
+- **TLS:** `dev/generate-dev-keystore.sh` creates a self-signed EC certificate for `localhost` per developer. Clients trust `dev-truststore.p12`, which holds only the certificate, not the private key. The service and the client need the trust-store flags because both make HTTPS calls; the KMS only serves. Hostname verification is on.
 - **Start order:** KMS first, then the service, then the client. The service needs the KMS for every key exchange.
-- **Tests:** 12 tests; `NimbusFeaturesTest.test1` is skipped unless its external PEM files exist.
+- **Tests:** 25 tests; `NimbusFeaturesTest.test1` is skipped unless its external PEM files exist.
 
 ## Known issues & caveats
 
 - **The KMS issues private keys to anyone:** no authentication, and private JWKs are returned over the network ([`KMSResource.java`](src/main/java/kms/KMSResource.java.md), [`KeyResponse.java`](src/main/java/data/KeyResponse.java.md)).
-- **Sessions are never evicted:** [`ClientCache.java`](src/main/java/util/ClientCache.java.md) grows with every key exchange, and sessions don't survive a restart.
+- **Sessions are in memory:** [`ClientCache.java`](src/main/java/util/ClientCache.java.md) holds at most 10,000 sessions, which expire after 30 minutes idle or 24 hours in total. They don't survive a restart, and `/keyexchange` has no rate limiting.
 - **Replay protection is per session and in memory:** each session's [`NonceCache`](src/main/java/util/NonceCache.java.md) only remembers nonces for the 5-minute window and is lost on restart. Replay across sessions isn't possible, because each session has its own keys. The `/keyexchange` call has no nonce, because it isn't authenticated anyway (see the README's exclusions).
 - **Hard-coded endpoints:** `https://localhost:8280/` in [`KMSConnector.java`](src/main/java/util/KMSConnector.java.md) and `https://localhost:8180/` in [`Client.java`](src/main/java/client/Client.java.md).
-- **Plain-text dev keystore password** (`password`) in [`kms.yml`](src/main/resources/kms.yml.md) and [`sample.yml`](src/main/resources/sample.yml.md).
 - **Low-level helpers return `null` or empty on failure:** [`JWUtil.java`](src/main/java/util/JWUtil.java.md) and [`JSONUtil.java`](src/main/java/util/JSONUtil.java.md) print stack traces and return `null` or empty instead of throwing. Only `decryptAndVerify` turns failures into exceptions.
 - **Unused leftovers from the Dropwizard template:**
   - The `template` / `defaultName` config values are required but never used ([`AppConfiguration.java`](src/main/java/common/AppConfiguration.java.md)).
   - `KeyRequest.clientName` is never set or read.
   - `JSONUtil.toPrettyJSON` is unused.
-- **Noisy stdout logging:** HTTP responses, JWE headers, key IDs and decrypted payloads are printed with `System.out` rather than a logger, and plaintext ends up in the logs ([`SampleRequestProcessor.java`](src/main/java/service/SampleRequestProcessor.java.md)).
-- **Dependencies not used directly by the code:** Guava, commons-io, commons-codec, BouncyCastle and CBOR are declared in [`pom.xml`](pom.xml.md) but not used directly.
+- **Noisy stdout logging:** HTTP responses, JWE headers and key IDs are printed with `System.out` rather than a logger. Decrypted payloads are no longer logged, and rejected `/verify` requests are logged at WARN by [`ClientManager.java`](src/main/java/util/ClientManager.java.md).
+- **Security audit:** see [`security/OWASP-AUDIT.md`](../security/OWASP-AUDIT.md) for the OWASP Top 10 findings, including the ones still open.

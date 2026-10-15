@@ -7,15 +7,19 @@ server:
   applicationConnectors:
     - type: https
       port: 8280
-      keyStorePath: src/main/resources/mytestkey.jks
-      keyStorePassword: password
+      keyStorePath: ${P2PE_KEYSTORE_PATH}
+      keyStorePassword: ${P2PE_KEYSTORE_PASSWORD}
+      keyStoreType: PKCS12
     #this requires the alpn-boot library on the JVM's boot classpath
     #- type: h2
     #  port: 8445
     #  keyStorePath: example.keystore
     #  keyStorePassword: example
   adminConnectors:
+    # admin (metrics, thread dumps, tasks) has no authentication, so keep it local-only
     - type: https
+      bindHost: 127.0.0.1
       port: 8281
-      keyStorePath: src/main/resources/mytestkey.jks
-      keyStorePassword: password
+      keyStorePath: ${P2PE_KEYSTORE_PATH}
+      keyStorePassword: ${P2PE_KEYSTORE_PASSWORD}
+      keyStoreType: PKCS12

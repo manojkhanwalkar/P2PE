@@ -15,6 +15,7 @@ Inherits everything Dropwizard needs from `Configuration` (notably the `server:`
 
 ## Functions
 - `getTemplate()` / `setTemplate(String)` and `getDefaultName()` / `setDefaultName(String)` — plain Jackson-bound accessors.
+- `static void enableEnvironmentSubstitution(Bootstrap<?> bootstrap)` — makes Dropwizard resolve `${ENV_VAR}` references in the YAML (strict: startup fails on an unset variable). Both applications call it from `initialize`.
 
 ## Notes
 - The values are passed into [`KMSResource.java`](../kms/KMSResource.java.md) and [`SampleResource.java`](../service/SampleResource.java.md), which store them but never use them.
