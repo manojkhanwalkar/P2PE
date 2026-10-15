@@ -25,3 +25,46 @@ The pattern does not cater to the following areas, which would need to be provid
 3. Long term key storage 
 4. Does not use certificates for validating public keys
 5. Use of a Nonce will provide additional security against replay attacks
+
+**Build & Run**
+
+Requires Java 26 and Maven 3.9+. Run the commands from the project root (the configs use a relative keystore path).
+
+```
+mvn package
+java -cp target/P2PE-1.0-SNAPSHOT.jar kms.KMSApplication server src/main/resources/kms.yml
+java -Djavax.net.ssl.trustStore=src/main/resources/mytestkey.jks -Djavax.net.ssl.trustStorePassword=password \
+     -cp target/P2PE-1.0-SNAPSHOT.jar service.SampleApplication server src/main/resources/sample.yml
+java -Djavax.net.ssl.trustStore=src/main/resources/mytestkey.jks -Djavax.net.ssl.trustStorePassword=password \
+     -cp target/P2PE-1.0-SNAPSHOT.jar client.Client
+```
+
+`mytestkey.jks` holds a self-signed development certificate for `localhost` (password `password`); do not use it in production.
+
+<!-- BEGIN: generated-docs-summary -->
+## Code Overview
+
+P2PE has three runnable parts, which use a sign-then-encrypt envelope (**JWE&lt;JWS&lt;payload&gt;&gt;**, ES256 signatures, ECDH-ES + A256GCM encryption) on top of HTTPS:
+
+- `kms.KMSApplication` (port 8280): issues fresh EC P-256 key pairs.
+- `service.SampleApplication` (port 8180): handshake plus encrypted echo endpoint.
+- `client.Client`: demo that runs the whole flow once.
+
+```mermaid
+flowchart LR
+    C["Client"] -- "POST /issuekey" --> K["KMS :8280"]
+    C -- "POST /keyexchange, POST /verify" --> S["Sample service :8180"]
+    S -- "POST /issuekey (per key exchange)" --> K
+```
+
+**Flow:**
+1. The client gets its keys from the KMS.
+2. `/keyexchange` swaps public keys. The service fetches its own keys from the KMS and caches the session under its ECDH key ID.
+3. `/verify` carries messages signed by the client and encrypted to the service. The service decrypts, verifies, processes (echo), then signs and encrypts the reply back.
+
+All crypto lives in `util/JWUtil.java`. Server-side session handling is `util/KeyExchangeUtil.java` → `util/ClientHandler.java` → `util/ClientManager.java`, and the client side is `util/ServiceConnector.java`.
+
+**Build & run:** `mvn package`, then start the KMS, the service and the client as shown in *Build & Run* above. Run from the repository root.
+
+For per-file and per-function documentation, the full file index and known issues, see [docs/OVERVIEW.md](docs/OVERVIEW.md).
+<!-- END: generated-docs-summary -->
