@@ -7,7 +7,7 @@ server:
   applicationConnectors:
     - type: https
       port: 8180
-      keyStorePath: /home/manoj/IdeaProjects/P2PE/src/main/resources/mytestkey.jks
+      keyStorePath: src/main/resources/mytestkey.jks
       keyStorePassword: password
     #this requires the alpn-boot library on the JVM's boot classpath
     #- type: h2
@@ -17,5 +17,5 @@ server:
   adminConnectors:
     - type: https
       port: 8181
-      keyStorePath: /home/manoj/IdeaProjects/P2PE/src/main/resources/mytestkey.jks
+      keyStorePath: src/main/resources/mytestkey.jks
       keyStorePassword: password

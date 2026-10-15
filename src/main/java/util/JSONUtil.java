@@ -13,7 +13,6 @@ public class JSONUtil {
 
     static {
         mapper.registerModule(new JavaTimeModule());
-        mapper.enableDefaultTyping();
     }
 
 
@@ -29,7 +28,7 @@ public class JSONUtil {
     }
 
 
-    public static Object fromJSON(String json, Class<?> clazz)
+    public static <T> T fromJSON(String json, Class<T> clazz)
     {
         try {
             return mapper.readValue(json,clazz);

@@ -1,6 +1,6 @@
 package data;
 
-public class EncryptedSignedResponse extends EncryptedSignedRequest{
+public class EncryptedSignedResponse extends EncryptedSignedMessage {
 
 
 }

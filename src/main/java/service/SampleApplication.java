@@ -1,9 +1,9 @@
 package service;
 
 
-import io.dropwizard.Application;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.Application;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 
 
 public class SampleApplication extends Application<SampleConfiguration> {
@@ -13,7 +13,7 @@ public class SampleApplication extends Application<SampleConfiguration> {
 
     @Override
     public String getName() {
-        return "Slacker Application";
+        return "Sample Service";
     }
 
     @Override

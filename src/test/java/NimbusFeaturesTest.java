@@ -7,13 +7,16 @@ import com.nimbusds.jose.jwk.gen.RSAKeyGenerator;
 import com.nimbusds.jose.util.X509CertUtils;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PublicKey;
@@ -117,7 +120,7 @@ public class NimbusFeaturesTest {
 
 
 // Check the signature
-        signedJWT.verify(new ECDSAVerifier(senderPublicJWK));
+        assertTrue(signedJWT.verify(new ECDSAVerifier(senderPublicJWK)));
 
 // Retrieve the JWT claims...
         System.out.println(signedJWT.getJWTClaimsSet());
@@ -175,7 +178,7 @@ public class NimbusFeaturesTest {
 
 
 // Check the signature
-        signedJWT.verify(new RSASSAVerifier(senderPublicJWK));
+        assertTrue(signedJWT.verify(new RSASSAVerifier(senderPublicJWK)));
 
 // Retrieve the JWT claims...
         System.out.println(signedJWT.getJWTClaimsSet());
@@ -243,7 +246,7 @@ public class NimbusFeaturesTest {
                 .keyID(UUID.randomUUID().toString())
                 .build();
 
-        System.out.println(jwk.toJSONObject().toJSONString());
+        System.out.println(jwk.toJSONString());
     }
 
     public static void test2() throws Exception
@@ -267,6 +270,9 @@ public class NimbusFeaturesTest {
 
 
         String str1 = "/home/manoj/data/nimbus/trial.pem";
+
+        // needs local PEM fixtures that are not part of the repository
+        assumeTrue(Files.exists(Path.of(str)) && Files.exists(Path.of(str1)), "PEM fixtures not found");
 
 
 
@@ -315,21 +321,8 @@ public class NimbusFeaturesTest {
     }
 
 
-    private  byte[] extractPublicKeyFromFile(String fileName)
+    private  byte[] extractPublicKeyFromFile(String fileName) throws IOException
     {
-        try {
-            File privKeyFile = new File(fileName);
-            // read private key DER file
-            DataInputStream dis = new DataInputStream(new FileInputStream(privKeyFile));
-            byte[] privKeyBytes = new byte[(int)privKeyFile.length()];
-            dis.read(privKeyBytes);
-            dis.close();
-
-            return privKeyBytes;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return null;
+        return Files.readAllBytes(Path.of(fileName));
     }
 }

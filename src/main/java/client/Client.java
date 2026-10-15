@@ -13,7 +13,7 @@ public class Client {
     public static void main(String[] args) throws Exception  {
 
 
-        KMSConnector kmsConnector = new KMSConnector("https://localhost:8280/");
+        KMSConnector kmsConnector = new KMSConnector(KMSConnector.DEFAULT_URL);
         // get the keys from KMS and populate them in the service connector
 
         var keys = kmsConnector.getKAandSignPubKeys(new KeyRequest());

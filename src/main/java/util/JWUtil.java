@@ -16,13 +16,10 @@ import java.security.PrivateKey;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.text.ParseException;
-import java.util.*;
-
-import data.Header;
+import java.util.Optional;
+import java.util.UUID;
 
 public class JWUtil {
-
-   // public enum SignType { Complete , Compressed }
 
 
     public static JWK createKey()
@@ -48,7 +45,7 @@ public class JWUtil {
     }
 
 
-    public static String encrypt(List<Header> headers , JWK encrypterKey, String payload)
+    public static String encrypt(JWK encrypterKey, String payload)
     {
 
         try {
@@ -156,6 +153,23 @@ public class JWUtil {
 
 
 
+    }
+
+
+    /** Signs {@code payload} with {@code signingKey}, then encrypts the JWS for {@code encryptionKey}: JWE&lt;JWS&lt;payload&gt;&gt;. */
+    public static String signAndEncrypt(JWK signingKey, JWK encryptionKey, String payload)
+    {
+        return encrypt(encryptionKey, sign(signingKey, payload));
+    }
+
+    /** Reverses {@link #signAndEncrypt}; throws {@link SecurityException} if decryption or signature verification fails. */
+    public static String decryptAndVerify(JWK decryptionKey, JWK verificationKey, String message)
+    {
+        String jws = decrypt(decryptionKey, message);
+        if (jws == null)
+            throw new SecurityException("Unable to decrypt message");
+
+        return verify(verificationKey, jws).orElseThrow(() -> new SecurityException("Signature verification failed"));
     }
 
 

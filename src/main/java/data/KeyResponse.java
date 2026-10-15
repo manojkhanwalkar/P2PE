@@ -1,10 +1,5 @@
 package data;
 
-import com.nimbusds.jose.jwk.JWK;
-import util.JSONUtil;
-
-import java.text.ParseException;
-
 public class KeyResponse {
 
   String signingKey;

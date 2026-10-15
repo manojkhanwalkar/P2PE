@@ -2,15 +2,9 @@ package util;
 
 
 import com.nimbusds.jose.jwk.JWK;
-import com.nimbusds.jose.jwk.JWKSet;
-import data.Header;
 import data.KeyRequest;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static util.JWUtil.*;
 
@@ -46,74 +40,27 @@ public class ClientHandler {
 
 
 
-    public void init(String kaPublicKey , String signPublicKey)
+    public void init(String kaPublicKey , String signPublicKey) throws ParseException
     {
-        try {
+        // get the keys from KMS for this client session
+        var keys = new KMSConnector(KMSConnector.DEFAULT_URL).getKAandSignPubKeys(new KeyRequest());
 
-            KMSConnector kmsConnector = new KMSConnector("https://localhost:8280/");
-        // get the keys from KMS and populate them in the service connector
-
-        var keys = kmsConnector.getKAandSignPubKeys(new KeyRequest());
-
-         kaPrivKReceiver = JWK.parse(keys.getKaKey());
-        kaPubKReceiver =  kaPrivKReceiver.toPublicJWK();
+        kaPrivKReceiver = JWK.parse(keys.getKaKey());
+        kaPubKReceiver = kaPrivKReceiver.toPublicJWK();
         signPrivKReceiver = JWK.parse(keys.getSigningKey());
-         signPubKReceiver = signPrivKReceiver.toPublicJWK();
+        signPubKReceiver = signPrivKReceiver.toPublicJWK();
 
-            signSenderKey = JWK.parse(signPublicKey);
-            kaSenderKey = JWK.parse(kaPublicKey);
-
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-
-
+        signSenderKey = JWK.parse(signPublicKey);
+        kaSenderKey = JWK.parse(kaPublicKey);
     }
 
-
-
-
-    public ClientHandler()
+    public String unwrap(String message)
     {
-        //createKeys();
-    }
-
-    public String unwrap(String message) throws Exception
-    {
-
-        String payload = verify(signSenderKey,decrypt(kaPrivKReceiver,message)).orElseThrow();
-
-
-        return payload;
-
-
-
+        return decryptAndVerify(kaPrivKReceiver, signSenderKey, message);
     }
 
     public String wrap(String message)
     {
-        JWK kaPubKSender = kaSenderKey; //.values().stream().findAny().get();
-
-        //JWK signPrivKReceiver =   .values().stream().findAny().get();
-
-        List<Header> headers = List.of();
-
-        String str = encrypt(headers , kaPubKSender,sign(signPrivKReceiver,message));
-
-
-        return str;
-
+        return signAndEncrypt(signPrivKReceiver, kaSenderKey, message);
     }
-
-
-
-
-
-
-
-
-
-
-
 }
