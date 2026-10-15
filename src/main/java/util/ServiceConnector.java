@@ -48,18 +48,26 @@ public class ServiceConnector {
     {
         System.out.println("Encrypt key " + kareceiverKey.getKeyID() + " " + "Sign Key " + signPrivKSender.getKeyID());
 
+        // fresh nonce per request: the service rejects repeats, and must echo it back in the signed response
+        String nonce = newNonce();
+
         EncryptedSignedRequest esRequest = new EncryptedSignedRequest();
-        esRequest.setEncryptedSignedPayload(signAndEncrypt(signPrivKSender, kareceiverKey, payload));
+        esRequest.setEncryptedSignedPayload(signAndEncrypt(signPrivKSender, kareceiverKey, payload, nonce));
 
         EncryptedSignedResponse response = connection.send(esRequest, action, EncryptedSignedResponse.class);
 
-        return UnwrapResponse(response.getEncryptedSignedPayload());
+        return unwrapResponse(response.getEncryptedSignedPayload(), nonce);
     }
 
 
-    public String UnwrapResponse(String message)
+    /** Decrypts and verifies a response; throws {@link SecurityException} unless it echoes {@code expectedNonce}. */
+    public String unwrapResponse(String message, String expectedNonce)
     {
-        return decryptAndVerify(kaPrivKSender, signreceiverKey, message);
+        VerifiedMessage verified = decryptAndVerify(kaPrivKSender, signreceiverKey, message);
+        if (!expectedNonce.equals(verified.nonce()))
+            throw new SecurityException("Response nonce does not match request nonce");
+
+        return verified.payload();
     }
 
 }

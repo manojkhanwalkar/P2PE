@@ -4,6 +4,9 @@ import com.nimbusds.jose.JWEObject;
 import com.nimbusds.jose.jwk.JWK;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+import java.time.Instant;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class JWUtilTest {
@@ -13,9 +16,17 @@ public class JWUtilTest {
 
     @Test
     public void signThenEncryptRoundTrips() {
-        String wire = JWUtil.signAndEncrypt(senderSignKey, receiverKaKey.toPublicJWK(), "hello");
+        String wire = JWUtil.signAndEncrypt(senderSignKey, receiverKaKey.toPublicJWK(), "hello", "n1");
 
-        assertEquals("hello", JWUtil.decryptAndVerify(receiverKaKey, senderSignKey.toPublicJWK(), wire));
+        VerifiedMessage message = JWUtil.decryptAndVerify(receiverKaKey, senderSignKey.toPublicJWK(), wire);
+        assertEquals("hello", message.payload());
+        assertEquals("n1", message.nonce());
+        assertTrue(Duration.between(message.issuedAt(), Instant.now()).abs().getSeconds() < 5);
+    }
+
+    @Test
+    public void newNonceIsUnique() {
+        assertNotEquals(JWUtil.newNonce(), JWUtil.newNonce());
     }
 
     @Test
@@ -27,7 +38,7 @@ public class JWUtilTest {
 
     @Test
     public void decryptAndVerifyRejectsWrongSigner() {
-        String wire = JWUtil.signAndEncrypt(JWUtil.createKey(), receiverKaKey.toPublicJWK(), "hello");
+        String wire = JWUtil.signAndEncrypt(JWUtil.createKey(), receiverKaKey.toPublicJWK(), "hello", "n1");
 
         assertThrows(SecurityException.class,
                 () -> JWUtil.decryptAndVerify(receiverKaKey, senderSignKey.toPublicJWK(), wire));
@@ -35,7 +46,7 @@ public class JWUtilTest {
 
     @Test
     public void decryptAndVerifyRejectsWrongRecipient() {
-        String wire = JWUtil.signAndEncrypt(senderSignKey, JWUtil.createKey().toPublicJWK(), "hello");
+        String wire = JWUtil.signAndEncrypt(senderSignKey, JWUtil.createKey().toPublicJWK(), "hello", "n1");
 
         assertThrows(SecurityException.class,
                 () -> JWUtil.decryptAndVerify(receiverKaKey, senderSignKey.toPublicJWK(), wire));

@@ -13,13 +13,30 @@ import com.nimbusds.jose.jwk.JWK;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.text.ParseException;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
 public class JWUtil {
+
+    /** JWS header parameters carrying the replay-protection nonce and the signing time (epoch seconds). */
+    public static final String NONCE_HEADER = "nonce";
+    public static final String ISSUED_AT_HEADER = "iat";
+
+    private static final SecureRandom RANDOM = new SecureRandom();
+
+    /** Returns a fresh 128-bit random nonce, base64url encoded. */
+    public static String newNonce()
+    {
+        byte[] bytes = new byte[16];
+        RANDOM.nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+    }
 
 
     public static JWK createKey()
@@ -113,10 +130,34 @@ public class JWUtil {
 
 
 
+    /** Signs {@code payload} with a JWS header that also carries {@code nonce} and the current time, so both are covered by the signature. */
+    public static String sign(JWK jwk , String payload, String nonce)  {
+
+        try {
+            var header = new JWSHeader.Builder(JWSAlgorithm.ES256).contentType("text/plain").keyID(jwk.getKeyID())
+                    .customParam(NONCE_HEADER, nonce)
+                    .customParam(ISSUED_AT_HEADER, Instant.now().getEpochSecond())
+                    .build();
+            return sign(jwk.toECKey().toPrivateKey(), header, payload);
+        } catch (JOSEException e) {
+            e.printStackTrace();
+
+            return null;
+        }
+    }
+
+
+
     public static String sign(PrivateKey privateKey , String msg,String keyId) throws JOSEException {
 
-        var payload = new Payload(msg);
         var header = new JWSHeader.Builder(JWSAlgorithm.ES256).contentType("text/plain").keyID(keyId).build();
+        return sign(privateKey, header, msg);
+    }
+
+
+    private static String sign(PrivateKey privateKey, JWSHeader header, String msg) throws JOSEException {
+
+        var payload = new Payload(msg);
 
 
         var jwsObject = new JWSObject(header, payload);
@@ -133,6 +174,13 @@ public class JWUtil {
 
     public static Optional<String> verify(JWK publicKey , String compactSerialization)
     {
+        return verifyMessage(publicKey, compactSerialization).map(VerifiedMessage::payload);
+    }
+
+
+    /** Verifies the JWS and returns its payload together with the nonce and timestamp from its signed header (either may be null if absent). */
+    public static Optional<VerifiedMessage> verifyMessage(JWK publicKey , String compactSerialization)
+    {
 
         try {
             var jwsObject = JWSObject.parse(compactSerialization);
@@ -141,7 +189,10 @@ public class JWUtil {
 
             if (jwsObject.verify(verifier)) {
                 System.out.println("Receiver successfully verified signature");
-                return Optional.of(jwsObject.getPayload().toString());
+                var header = jwsObject.getHeader();
+                var nonce = header.getCustomParam(NONCE_HEADER) instanceof String n ? n : null;
+                var issuedAt = header.getCustomParam(ISSUED_AT_HEADER) instanceof Number t ? Instant.ofEpochSecond(t.longValue()) : null;
+                return Optional.of(new VerifiedMessage(jwsObject.getPayload().toString(), nonce, issuedAt));
             }
         } catch (ParseException e) {
             e.printStackTrace();
@@ -156,20 +207,20 @@ public class JWUtil {
     }
 
 
-    /** Signs {@code payload} with {@code signingKey}, then encrypts the JWS for {@code encryptionKey}: JWE&lt;JWS&lt;payload&gt;&gt;. */
-    public static String signAndEncrypt(JWK signingKey, JWK encryptionKey, String payload)
+    /** Signs {@code payload} (with {@code nonce} and a timestamp in the signed header) using {@code signingKey}, then encrypts the JWS for {@code encryptionKey}: JWE&lt;JWS&lt;payload&gt;&gt;. */
+    public static String signAndEncrypt(JWK signingKey, JWK encryptionKey, String payload, String nonce)
     {
-        return encrypt(encryptionKey, sign(signingKey, payload));
+        return encrypt(encryptionKey, sign(signingKey, payload, nonce));
     }
 
-    /** Reverses {@link #signAndEncrypt}; throws {@link SecurityException} if decryption or signature verification fails. */
-    public static String decryptAndVerify(JWK decryptionKey, JWK verificationKey, String message)
+    /** Reverses {@link #signAndEncrypt}; throws {@link SecurityException} if decryption or signature verification fails. Nonce/timestamp checks are left to the caller. */
+    public static VerifiedMessage decryptAndVerify(JWK decryptionKey, JWK verificationKey, String message)
     {
         String jws = decrypt(decryptionKey, message);
         if (jws == null)
             throw new SecurityException("Unable to decrypt message");
 
-        return verify(verificationKey, jws).orElseThrow(() -> new SecurityException("Signature verification failed"));
+        return verifyMessage(verificationKey, jws).orElseThrow(() -> new SecurityException("Signature verification failed"));
     }
 
 

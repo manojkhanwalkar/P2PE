@@ -16,7 +16,8 @@ It uses DropWizard for the services.
 8. Both sides will use the other's public key and use DiffieHellman to derive the shared secret. 
 9. Each message will use an ephemeral keypair and the other parties public key to derive the shared secret.This actual work is done by the Nimbus library.
 10. The message sent has the following format JWE<JWS<Message>> and the other party first decrypts the message and then verifies the signature before processing the message.
-11. Server implements two Rest end points - one for keyexchange and one for processing the message.
+11. Replay protection: every request carries a fresh random nonce and a timestamp (`nonce` and `iat`) in the signed JWS header. The server rejects a nonce it has already seen in that session, or a timestamp more than 5 minutes off. The response echoes the request's nonce, and the client rejects a response whose nonce doesn't match.
+12. Server implements two Rest end points - one for keyexchange and one for processing the message.
 
 **Exclusions**
 The pattern does not cater to the following areas, which would need to be provided by alternate mechanisms.
@@ -24,7 +25,6 @@ The pattern does not cater to the following areas, which would need to be provid
 2. Service discovery 
 3. Long term key storage 
 4. Does not use certificates for validating public keys
-5. Use of a Nonce will provide additional security against replay attacks
 
 **Build & Run**
 

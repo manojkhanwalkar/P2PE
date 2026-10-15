@@ -43,7 +43,8 @@ sequenceDiagram
 3. **Encrypted request:**
    - `ServiceConnector.send` → `JWUtil.signAndEncrypt` → `POST /verify`.
    - Server: `ClientManager.process` reads the JWE `kid`, finds the session, then calls `ClientHandler.unwrap` (`JWUtil.decryptAndVerify`), `SampleRequestProcessor.process` (echo) and `ClientHandler.wrap`.
-   - Client: `ServiceConnector.UnwrapResponse` decrypts and verifies the reply.
+   - Client: `ServiceConnector.unwrapResponse` decrypts and verifies the reply and checks that it echoes the request nonce.
+   - Replay protection: each request's signed JWS header carries a fresh `nonce` and an `iat` timestamp. `ClientHandler.unwrap` passes them to the session's [`NonceCache`](src/main/java/util/NonceCache.java.md), which rejects repeated nonces and timestamps more than 5 minutes off.
 4. **Errors:** a malformed JWE, an unknown session, or a failed decryption or signature check returns HTTP 400. A KMS outage during the key exchange returns HTTP 500.
 
 ## Directory / module map
@@ -57,7 +58,7 @@ sequenceDiagram
 | `src/main/java/data` | JSON request/response beans. |
 | `src/main/java/util` | Crypto (`JWUtil`), HTTP/JSON helpers, client and server session logic. |
 | `src/main/resources` | Dropwizard YAML configs and the dev TLS keystore `mytestkey.jks`. |
-| `src/test/java` | Unit tests for `JWUtil` plus exploratory Nimbus examples. |
+| `src/test/java` | Unit tests for `JWUtil`, `NonceCache` and `ClientHandler` plus exploratory Nimbus examples. |
 
 ## File index
 
@@ -86,13 +87,17 @@ sequenceDiagram
 | [`util/Connection.java`](src/main/java/util/Connection.java.md) | HTTPS JSON POST client. |
 | [`util/JSONUtil.java`](src/main/java/util/JSONUtil.java.md) | Jackson helpers. |
 | [`util/JWUtil.java`](src/main/java/util/JWUtil.java.md) | Key generation, JWE/JWS, sign+encrypt envelope. |
+| [`util/NonceCache.java`](src/main/java/util/NonceCache.java.md) | Per-session replay guard (nonce + timestamp window). |
 | [`util/KeyExchangeUtil.java`](src/main/java/util/KeyExchangeUtil.java.md) | Server-side key-exchange handshake. |
 | [`util/KMSConnector.java`](src/main/java/util/KMSConnector.java.md) | Client for the KMS. |
 | [`util/ServiceConnector.java`](src/main/java/util/ServiceConnector.java.md) | Client side of a session. |
+| [`util/VerifiedMessage.java`](src/main/java/util/VerifiedMessage.java.md) | Verified payload + nonce + timestamp. |
 | [`resources/kms.yml`](src/main/resources/kms.yml.md) | KMS config (ports 8280/8281). |
 | [`resources/sample.yml`](src/main/resources/sample.yml.md) | Service config (ports 8180/8181). |
 | [`test/NimbusFeaturesTest.java`](src/test/java/NimbusFeaturesTest.java.md) | Exploratory Nimbus examples. |
 | [`test/util/JWUtilTest.java`](src/test/java/util/JWUtilTest.java.md) | Tests for the crypto envelope. |
+| [`test/util/NonceCacheTest.java`](src/test/java/util/NonceCacheTest.java.md) | Tests for the replay guard. |
+| [`test/util/ClientHandlerTest.java`](src/test/java/util/ClientHandlerTest.java.md) | Replay rejection and nonce echo for a session. |
 
 ## Build, run, test
 
@@ -122,7 +127,7 @@ java $TRUST -cp $JAR client.Client                                              
 
 - **The KMS issues private keys to anyone:** no authentication, and private JWKs are returned over the network ([`KMSResource.java`](src/main/java/kms/KMSResource.java.md), [`KeyResponse.java`](src/main/java/data/KeyResponse.java.md)).
 - **Sessions are never evicted:** [`ClientCache.java`](src/main/java/util/ClientCache.java.md) grows with every key exchange, and sessions don't survive a restart.
-- **No replay protection:** there are no nonces or timestamps, as the README's exclusions list notes.
+- **Replay protection is per session and in memory:** each session's [`NonceCache`](src/main/java/util/NonceCache.java.md) only remembers nonces for the 5-minute window and is lost on restart. Replay across sessions isn't possible, because each session has its own keys. The `/keyexchange` call has no nonce, because it isn't authenticated anyway (see the README's exclusions).
 - **Hard-coded endpoints:** `https://localhost:8280/` in [`KMSConnector.java`](src/main/java/util/KMSConnector.java.md) and `https://localhost:8180/` in [`Client.java`](src/main/java/client/Client.java.md).
 - **Plain-text dev keystore password** (`password`) in [`kms.yml`](src/main/resources/kms.yml.md) and [`sample.yml`](src/main/resources/sample.yml.md).
 - **Low-level helpers return `null` or empty on failure:** [`JWUtil.java`](src/main/java/util/JWUtil.java.md) and [`JSONUtil.java`](src/main/java/util/JSONUtil.java.md) print stack traces and return `null` or empty instead of throwing. Only `decryptAndVerify` turns failures into exceptions.

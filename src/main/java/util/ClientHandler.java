@@ -23,6 +23,8 @@ public class ClientHandler {
     JWK signSenderKey=null;
     JWK kaSenderKey=null;
 
+    private final NonceCache nonceCache = new NonceCache();
+
 
 
 
@@ -54,13 +56,17 @@ public class ClientHandler {
         kaSenderKey = JWK.parse(kaPublicKey);
     }
 
-    public String unwrap(String message)
+    /** Decrypts and verifies a request, then rejects it if its nonce was already used or its timestamp is stale. */
+    public VerifiedMessage unwrap(String message)
     {
-        return decryptAndVerify(kaPrivKReceiver, signSenderKey, message);
+        VerifiedMessage verified = decryptAndVerify(kaPrivKReceiver, signSenderKey, message);
+        nonceCache.checkAndRecord(verified);
+        return verified;
     }
 
-    public String wrap(String message)
+    /** Signs and encrypts a response, echoing the request's nonce so the client can match the response to its request. */
+    public String wrap(String message, String requestNonce)
     {
-        return signAndEncrypt(signPrivKReceiver, kaSenderKey, message);
+        return signAndEncrypt(signPrivKReceiver, kaSenderKey, message, requestNonce);
     }
 }

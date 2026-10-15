@@ -10,8 +10,8 @@
 - **What it does:**
   1. Parses the JWE header (without decrypting) to read its `kid`, which identifies the server key the client encrypted to and therefore the session.
   2. Looks the session up in `clientCache`.
-  3. `clientHandler.unwrap` decrypts and verifies the signature.
+  3. `clientHandler.unwrap` decrypts, verifies the signature and rejects replayed or stale nonces.
   4. Passes the plaintext to `processor.process`.
-  5. `clientHandler.wrap` signs and encrypts the result and returns it in an `EncryptedSignedResponse`.
-- **Errors:** `BadRequestException` (HTTP 400) when the JWE is malformed, the `kid` is unknown, or decryption or verification fails. Exceptions from `processor` are not caught (HTTP 500).
+  5. `clientHandler.wrap` signs and encrypts the result, echoing the request nonce, and returns it in an `EncryptedSignedResponse`.
+- **Errors:** `BadRequestException` (HTTP 400) when the JWE is malformed, the `kid` is unknown, or decryption, verification or the nonce check fails. Exceptions from `processor` are not caught (HTTP 500).
 - **Notes:** a `null` payload field would cause a `NullPointerException` while parsing (HTTP 500), not a 400.

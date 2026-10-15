@@ -21,9 +21,9 @@ Stores the base URL and the client's two private JWKs, and derives their public 
 - **Errors:** `RuntimeException` if the call fails; `ParseException` if the returned JWKs are invalid.
 
 ### `String send(String payload, String action)`
-- **What it does:** prints the key IDs in use, wraps `payload` as JWE&lt;JWS&gt; (signed with the client key, encrypted to the service key), POSTs it to `action`, and unwraps the reply.
+- **What it does:** prints the key IDs in use, generates a fresh nonce (`JWUtil.newNonce`), wraps `payload` as JWE&lt;JWS&gt; (signed with the client key, encrypted to the service key, nonce in the signed header), POSTs it to `action`, and unwraps the reply.
 - **Returns:** the verified plaintext response.
-- **Errors:** `NullPointerException` if `init()` was not called; `RuntimeException` on HTTP failure; `SecurityException` if the reply fails decryption or verification.
+- **Errors:** `NullPointerException` if `init()` was not called; `RuntimeException` on HTTP failure; `SecurityException` if the reply fails decryption or verification, or doesn't echo the nonce.
 
-### `String UnwrapResponse(String message)`
-Decrypts a response with the client's ECDH private key and verifies it with the service's signing key. Throws `SecurityException` on failure.
+### `String unwrapResponse(String message, String expectedNonce)`
+Decrypts a response with the client's ECDH private key and verifies it with the service's signing key. Throws `SecurityException` on failure, or if the response's nonce isn't `expectedNonce`, which rejects a replayed old response.

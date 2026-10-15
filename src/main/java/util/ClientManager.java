@@ -23,17 +23,17 @@ public class ClientManager {
         ClientHandler clientHandler = clientCache.get(keyId)
                 .orElseThrow(() -> new BadRequestException("Unknown key id " + keyId + "; perform key exchange first"));
 
-        String payloadUnwrapped;
+        VerifiedMessage request;
         try {
-            payloadUnwrapped = clientHandler.unwrap(payload);
+            request = clientHandler.unwrap(payload);
         } catch (SecurityException e) {
             throw new BadRequestException(e.getMessage(), e);
         }
 
-        String processedResponse = processor.process(payloadUnwrapped);
+        String processedResponse = processor.process(request.payload());
 
         EncryptedSignedResponse encryptedSignedResponse = new EncryptedSignedResponse();
-        encryptedSignedResponse.setEncryptedSignedPayload(clientHandler.wrap(processedResponse));
+        encryptedSignedResponse.setEncryptedSignedPayload(clientHandler.wrap(processedResponse, request.nonce()));
 
         return encryptedSignedResponse;
     }

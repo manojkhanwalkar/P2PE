@@ -6,7 +6,7 @@
 **Used by:** [`KMSResource.java`](../kms/KMSResource.java.md) (`createKey`), [`ClientHandler.java`](ClientHandler.java.md) and [`ServiceConnector.java`](ServiceConnector.java.md) (`signAndEncrypt`/`decryptAndVerify`), [`JWUtilTest.java`](../../../test/java/util/JWUtilTest.java.md).
 
 ## Overview
-The wire format is **JWE&lt;JWS&lt;payload&gt;&gt;**: the payload is signed with the sender's private signing key (ES256), and that compact JWS is then encrypted to the recipient's public EC key with ECDH-ES. Each message gets a fresh ephemeral key from Nimbus. The JWE header's `kid` is the recipient key's ID, which is how the server finds the session. Several low-level methods print to stdout and return `null` or empty on failure; `decryptAndVerify` turns those failures into exceptions.
+The wire format is **JWE&lt;JWS&lt;payload&gt;&gt;**: the payload is signed with the sender's private signing key (ES256), and that compact JWS is then encrypted to the recipient's public EC key with ECDH-ES. Each message gets a fresh ephemeral key from Nimbus. For replay protection the signed JWS header also carries custom `nonce` and `iat` (epoch seconds) parameters; they are inside the encryption and covered by the signature. The JWE header's `kid` is the recipient key's ID, which is how the server finds the session. Several low-level methods print to stdout and return `null` or empty on failure; `decryptAndVerify` turns those failures into exceptions.
 
 ## Functions
 ### `static JWK createKey()`
@@ -22,21 +22,30 @@ The wire format is **JWE&lt;JWS&lt;payload&gt;&gt;**: the payload is signed with
 - **Returns:** the plaintext, or **`null`** on parse or decryption failure (the stack trace is printed).
 - **Notes:** a non-EC `decrypterKey` throws an uncaught `ClassCastException`.
 
+### `static String newNonce()`
+Returns a fresh 128-bit `SecureRandom` value, base64url-encoded without padding.
+
+### `static String sign(JWK jwk, String payload, String nonce)`
+Like `sign(JWK, String)`, but also puts `nonce` and the current time (`iat`) into the JWS header. Returns **`null`** on `JOSEException`.
+
 ### `static String sign(JWK jwk, String payload)`
 Signs with the JWK's EC private key and sets the JWS `kid` to the JWK's ID. Returns **`null`** on `JOSEException`.
 
 ### `static String sign(PrivateKey privateKey, String msg, String keyId) throws JOSEException`
 Builds a JWS with `alg=ES256`, `cty=text/plain`, `kid=keyId`, signs it with the EC private key, and returns the compact serialisation.
 
-### `static Optional<String> verify(JWK publicKey, String compactSerialization)`
+### `static Optional<VerifiedMessage> verifyMessage(JWK publicKey, String compactSerialization)`
 - **What it does:** parses a compact JWS and verifies it with the EC public key; on success it prints "Receiver successfully verified signature".
-- **Returns:** the payload if the signature is valid, otherwise empty (parse and JOSE errors are printed and swallowed).
+- **Returns:** a [`VerifiedMessage`](VerifiedMessage.java.md) with the payload and the header's `nonce` and `iat` (each `null` if absent or of the wrong type) if the signature is valid, otherwise empty (parse and JOSE errors are printed and swallowed).
 
-### `static String signAndEncrypt(JWK signingKey, JWK encryptionKey, String payload)`
-Returns `encrypt(encryptionKey, sign(signingKey, payload))`, the JWE&lt;JWS&lt;payload&gt;&gt; envelope.
+### `static Optional<String> verify(JWK publicKey, String compactSerialization)`
+Returns only the payload from `verifyMessage`.
 
-### `static String decryptAndVerify(JWK decryptionKey, JWK verificationKey, String message)`
-- **What it does:** the inverse of `signAndEncrypt`.
+### `static String signAndEncrypt(JWK signingKey, JWK encryptionKey, String payload, String nonce)`
+Returns `encrypt(encryptionKey, sign(signingKey, payload, nonce))`, the JWE&lt;JWS&lt;payload&gt;&gt; envelope, with `nonce` and `iat` in the signed header.
+
+### `static VerifiedMessage decryptAndVerify(JWK decryptionKey, JWK verificationKey, String message)`
+- **What it does:** the inverse of `signAndEncrypt`. It returns the nonce and timestamp but does **not** check them: replay checks are the caller's job ([`NonceCache`](NonceCache.java.md) on the server, nonce matching in [`ServiceConnector`](ServiceConnector.java.md) on the client).
 - **Errors:** throws `SecurityException("Unable to decrypt message")` or `SecurityException("Signature verification failed")`.
 
 ### `static JWK createECJWK(KeyPair keyPair, String keyId, boolean includePrivate) throws Exception`
