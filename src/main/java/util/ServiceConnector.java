@@ -1,5 +1,8 @@
 package util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.nimbusds.jose.jwk.JWK;
 import data.*;
@@ -8,6 +11,8 @@ import static util.JWUtil.*;
 
 
 public class ServiceConnector {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ServiceConnector.class);
 
     private final JWK kaPubKSender;
     private final JWK kaPrivKSender;
@@ -38,15 +43,16 @@ public class ServiceConnector {
 
 
         KeyExchange response = connection.send(request, "keyexchange", KeyExchange.class);
-        kareceiverKey = JWK.parse(response.getKaPublicKey());
-        signreceiverKey = JWK.parse(response.getSignPublicKey());
+        // same checks the service applies to client keys: public EC P-256 only
+        kareceiverKey = ClientHandler.parsePeerKey(response.getKaPublicKey());
+        signreceiverKey = ClientHandler.parsePeerKey(response.getSignPublicKey());
 
     }
 
 
     public String send(String payload, String action)
     {
-        System.out.println("Encrypt key " + kareceiverKey.getKeyID() + " " + "Sign Key " + signPrivKSender.getKeyID());
+        LOG.debug("Encrypt key {} Sign key {}", kareceiverKey.getKeyID(), signPrivKSender.getKeyID());
 
         // fresh nonce per request: the service rejects repeats, and must echo it back in the signed response
         String nonce = newNonce();

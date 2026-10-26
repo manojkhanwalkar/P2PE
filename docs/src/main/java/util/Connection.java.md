@@ -25,6 +25,6 @@ POSTs a raw JSON string; see `post`.
 - **Errors:** throws `RuntimeException("Request to <url> failed")` when the call fails, the status is not 200, or the body can't be parsed. The original cause is not attached.
 
 ### `private Optional<String> post(String str, String url)`
-- **What it does:** sends `POST target+url` with `Content-Type: application/json` and a 1-minute timeout, and prints the `HttpResponse` summary to stdout.
+- **What it does:** sends `POST target+url` with `Content-Type: application/json` and a 1-minute timeout, and logs the URI and status code at DEBUG.
 - **Returns:** the body if the status is 200, otherwise empty.
-- **Errors:** an `IOException` is printed and swallowed (returns empty). On `InterruptedException` it restores the interrupt flag and returns empty.
+- **Errors:** an `IOException` is logged at WARN and swallowed (returns empty). On `InterruptedException` it restores the interrupt flag and returns empty.

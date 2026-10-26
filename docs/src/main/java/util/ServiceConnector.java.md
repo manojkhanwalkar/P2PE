@@ -17,11 +17,11 @@
 Stores the base URL and the client's two private JWKs, and derives their public halves.
 
 ### `void init() throws Exception`
-- **What it does:** `POST keyexchange` with the client's public keys, then stores the service's public keys from the reply.
-- **Errors:** `RuntimeException` if the call fails; `ParseException` if the returned JWKs are invalid.
+- **What it does:** `POST keyexchange` with the client's public keys, then validates and stores the service's public keys from the reply (only public EC P-256 JWKs are accepted, via `ClientHandler.parsePeerKey`).
+- **Errors:** `RuntimeException` if the call fails; `ParseException` if the returned JWKs are invalid, not EC P-256, or contain private parts.
 
 ### `String send(String payload, String action)`
-- **What it does:** prints the key IDs in use, generates a fresh nonce (`JWUtil.newNonce`), wraps `payload` as JWE&lt;JWS&gt; (signed with the client key, encrypted to the service key, nonce in the signed header), POSTs it to `action`, and unwraps the reply.
+- **What it does:** logs the key IDs in use at DEBUG, generates a fresh nonce (`JWUtil.newNonce`), wraps `payload` as JWE&lt;JWS&gt; (signed with the client key, encrypted to the service key, nonce in the signed header), POSTs it to `action`, and unwraps the reply.
 - **Returns:** the verified plaintext response.
 - **Errors:** `NullPointerException` if `init()` was not called; `RuntimeException` on HTTP failure; `SecurityException` if the reply fails decryption or verification, or doesn't echo the nonce.
 

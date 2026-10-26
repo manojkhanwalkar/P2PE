@@ -19,6 +19,10 @@
         <tink.version>1.23.0</tink.version>
         <guava.version>33.7.2-jre</guava.version>
         <junit.version>6.1.3</junit.version>
+        <!-- Overrides of Dropwizard 5.0.2's managed versions for known CVEs:
+             Jetty 12.1.9 (CVE-2026-10050, CVE-2026-10051), logback 1.5.33 (CVE-2026-10532) -->
+        <jetty.version>12.1.14</jetty.version>
+        <logback.version>1.5.38</logback.version>
     </properties>
 
     <dependencyManagement>
@@ -30,6 +34,31 @@
                 <version>${jackson.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- Jetty and logback BOMs before Dropwizard's so the patched versions win -->
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-bom</artifactId>
+                <version>${jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-bom</artifactId>
+                <version>${jetty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-core</artifactId>
+                <version>${logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.logback</groupId>
+                <artifactId>logback-classic</artifactId>
+                <version>${logback.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.junit</groupId>
