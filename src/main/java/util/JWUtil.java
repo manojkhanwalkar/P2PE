@@ -1,5 +1,8 @@
 package util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import com.nimbusds.jose.*;
 import com.nimbusds.jose.crypto.ECDHDecrypter;
@@ -23,6 +26,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class JWUtil {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JWUtil.class);
 
     /** JWS header parameters carrying the replay-protection nonce and the signing time (epoch seconds). */
     public static final String NONCE_HEADER = "nonce";
@@ -53,7 +58,7 @@ public class JWUtil {
 
 
             } catch (Exception e) {
-                e.printStackTrace();
+                LOG.error("EC key generation failed", e);
             }
 
             return null;
@@ -72,7 +77,6 @@ public class JWUtil {
 
             var jweObject = new JWEObject(jweHeader, new Payload(payload));
 
-            System.out.println("JWE header: " + jweHeader.toJSONObject());
             jweObject.encrypt(new ECDHEncrypter(encrypterKey.toECKey()));
 
 
@@ -80,7 +84,7 @@ public class JWUtil {
 
 
         } catch (JOSEException e) {
-            e.printStackTrace();
+            LOG.error("JOSE operation failed", e);
 
             return null;
         }
@@ -103,10 +107,9 @@ public class JWUtil {
             var decryptedJWE = jweObject.getPayload().toString();
 
             return decryptedJWE;
-        } catch (ParseException e) {
-            e.printStackTrace();
-        } catch (JOSEException e) {
-            e.printStackTrace();
+        } catch (ParseException | JOSEException e) {
+            // attacker-triggerable: the caller logs the rejection, so keep this quiet and stack-free
+            LOG.debug("JWE decryption failed: {}", e.toString());
         }
 
         return null;
@@ -122,7 +125,7 @@ public class JWUtil {
         try {
             return sign(jwk.toECKey().toPrivateKey(),payload, jwk.getKeyID());
         } catch (JOSEException e) {
-            e.printStackTrace();
+            LOG.error("JOSE operation failed", e);
 
             return null;
         }
@@ -140,7 +143,7 @@ public class JWUtil {
                     .build();
             return sign(jwk.toECKey().toPrivateKey(), header, payload);
         } catch (JOSEException e) {
-            e.printStackTrace();
+            LOG.error("JOSE operation failed", e);
 
             return null;
         }
@@ -188,16 +191,14 @@ public class JWUtil {
             var verifier = new ECDSAVerifier(publicKey.toECKey());
 
             if (jwsObject.verify(verifier)) {
-                System.out.println("Receiver successfully verified signature");
                 var header = jwsObject.getHeader();
                 var nonce = header.getCustomParam(NONCE_HEADER) instanceof String n ? n : null;
                 var issuedAt = header.getCustomParam(ISSUED_AT_HEADER) instanceof Number t ? Instant.ofEpochSecond(t.longValue()) : null;
                 return Optional.of(new VerifiedMessage(jwsObject.getPayload().toString(), nonce, issuedAt));
             }
-        } catch (ParseException e) {
-            e.printStackTrace();
-        } catch (JOSEException e) {
-            e.printStackTrace();
+        } catch (ParseException | JOSEException e) {
+            // attacker-triggerable: the caller logs the rejection, so keep this quiet and stack-free
+            LOG.debug("JWS verification failed: {}", e.toString());
         }
 
         return Optional.empty();

@@ -138,5 +138,5 @@ java $TRUST -cp $JAR client.Client                                              
   - The `template` / `defaultName` config values are required but never used ([`AppConfiguration.java`](src/main/java/common/AppConfiguration.java.md)).
   - `KeyRequest.clientName` is never set or read.
   - `JSONUtil.toPrettyJSON` is unused.
-- **Noisy stdout logging:** HTTP responses, JWE headers and key IDs are printed with `System.out` rather than a logger. Decrypted payloads are no longer logged, and rejected `/verify` requests are logged at WARN by [`ClientManager.java`](src/main/java/util/ClientManager.java.md).
+- **Logging:** the `util` classes log through SLF4J (HTTP status and key IDs at DEBUG; decryption and verification failures at DEBUG without stack traces, because callers can trigger them at will). Decrypted payloads are never logged, and rejected `/verify` requests are logged at WARN by [`ClientManager.java`](src/main/java/util/ClientManager.java.md). Only the demo `Client` still prints its result to stdout.
 - **Security audit:** see [`security/OWASP-AUDIT.md`](../security/OWASP-AUDIT.md) for the OWASP Top 10 findings, including the ones still open.
