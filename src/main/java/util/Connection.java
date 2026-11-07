@@ -1,5 +1,8 @@
 package util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 import java.io.IOException;
 import java.net.URI;
@@ -10,6 +13,8 @@ import java.time.Duration;
 import java.util.Optional;
 
 public class Connection {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Connection.class);
 
     // HttpClient is thread-safe and owns a thread pool, so share one instead of creating one per request
     private static final HttpClient CLIENT = HttpClient.newHttpClient();
@@ -54,14 +59,14 @@ public class Connection {
                     CLIENT.send(httprequest, HttpResponse.BodyHandlers.ofString());
 
 
-            System.out.println(response);
+            LOG.debug("POST {} -> {}", httprequest.uri(), response.statusCode());
 
            if (response.statusCode()==200)
                return Optional.of(response.body());
 
 
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.warn("POST {}{} failed: {}", target, url, e.toString());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }

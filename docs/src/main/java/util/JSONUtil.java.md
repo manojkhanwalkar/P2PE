@@ -10,10 +10,10 @@ One shared, statically configured `ObjectMapper` with the Java Time module regis
 
 ## Functions
 ### `static String toJSON(Object object)`
-Serialises to compact JSON. **Returns `null`** on failure (the stack trace is printed).
+Serialises to compact JSON. **Returns `null`** on failure (logged at ERROR).
 
 ### `static <T> T fromJSON(String json, Class<T> clazz)`
-Deserialises JSON into `clazz`. **Returns `null`** on failure (the stack trace is printed). Unknown JSON properties cause a failure, because this is Jackson's default.
+Deserialises JSON into `clazz`. **Returns `null`** on failure (logged at WARN with the exception type only, since the input may come from a peer). Unknown JSON properties cause a failure, because this is Jackson's default.
 
 ### `static String toPrettyJSON(Object object)`
 Like `toJSON` but indented. Currently unused.
